@@ -1,0 +1,36 @@
+version: '3.7'
+
+x-common: &common
+    # user: 1027:100
+    logging:
+      driver: json-file
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+ 
+services:
+ 
+ openvpn:
+    <<: *common
+    image: liofal/openvpn:1.0
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./openvpn.conf:/openvpn/openvpn.conf
+    entrypoint: openvpn /openvpn/openvpn.conf
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+    - net_admin
+    ports:
+    - "8888:8888"
+ 
+ proxy:
+  image: vimagick/tinyproxy
+  <<: *common
+  network_mode: service:openvpn
+  depends_on:
+  - openvpn
